@@ -1,5 +1,5 @@
 import "react-native-gesture-handler";
-import {StyleSheet, TouchableOpacity, View,} from "react-native";
+import {StyleSheet, TouchableOpacity, View,Animated} from "react-native";
 import Draggable from "react-native-draggable";
 import CoordinateTile from "./CoordinateTile";
 import BoxItem from "../components/BoxItem";
@@ -7,8 +7,6 @@ import { useEffect, useRef, useState } from "react";
 import useStore from "../Store";
 import EIcon from 'react-native-vector-icons/EvilIcons'
 import FIcon from 'react-native-vector-icons/Foundation'
-import RNPhotoManipulator from 'react-native-photo-manipulator'
-import Animated, { useSharedValue,interpolate, useAnimatedStyle, useDerivedValue, withTiming, withRepeat, } from "react-native-reanimated";
 
 const  Home =({navigation,route})=> {
 
@@ -21,32 +19,24 @@ const  Home =({navigation,route})=> {
   const[sprite,setSprite] = useState("");
   const[X,setXP] = useState(0);
   const[Y,setYP] = useState(0);
-  const [degreeValue, setDegreeValue] = useState(0);
 
   const { actionList} =useStore((state) => ({actionList: state.actionList,}));
+  const [translateX] = useState(new Animated.Value(0));
+  const [translateY] = useState(new Animated.Value(0));
+  const [rotate] = useState(new Animated.Value(0));
 
+  const rotation=rotate.interpolate({
+    inputRange: [0,1],
+    outputRange: ['0deg','360deg'],
+  });
 
-
-
-  const animation = useSharedValue(0)
-
-  const rotation = useDerivedValue(() => {
-
-    return interpolate(animation.value,
-      [0,360],
-      [0,1080],)
-  })
-
-  const animationStyle = useAnimatedStyle(() => {
-    return{
-
-      transform:[
-        {
-          rotate: rotation.value + 'deg'
-        }
-      ]
-    }
-  })
+  const animationStyle = {
+    transform: [
+      { translateX },
+      { translateY },
+      { rotate: rotation },
+    ],
+  };
   function toolBoxPressed(){
     if(toolBoxImgVisible==0){
       setToolBoxImageVisible(100);
@@ -91,16 +81,59 @@ const  Home =({navigation,route})=> {
   }
 
   const playButton=()=>{
+    const animations = [];
     actionList?.map((item)=>{
-      if(item?.id==4){
-        animation.value = withTiming(120,{
-          duration : 2000
-        })
+      if(item?.id==1) {
+        animations.push(
+          Animated.timing(translateX,{
+            toValue: 50,
+            duration: 1000,
+            useNativeDriver: true,
+          })
+        )
+        setXP(X=>X+50)
+      }
+      else if(item?.id==2) {
+        animations.push(
+          Animated.timing(translateY,{
+            toValue: 50,
+            duration: 1000,
+            useNativeDriver: true,
+          })
+        )
+        setYP(Y=>Y+50)
+      }
+      //else if(item?.id==3){
+      //  //Animated.parallel([
+      //    animations.push(
+      //    Animated.timing(translateX, {
+      //      toValue: 100,
+      //      duration: 1000,
+      //      useNativeDriver: true,
+      //    }),
+      //    Animated.timing(translateY, {
+      //      toValue: 100,
+      //      duration: 1000,
+      //      useNativeDriver: true,
+      //    })
+      //  )
+      //}
+      else if(item?.id==4){
+        animations.push(
+          Animated.timing(rotate, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          })
+        )
       }
     })
+    Animated.sequence(animations).start(() => {
+    });
   }
   const refreshButtonClick=()=>{
     setToolBoxImageVisible(0);
+    setBallBoxImageVisible(0)
     setScratchActionVisible(0);
     setBallActionVisible(0);
     setBallBG('white');
@@ -128,12 +161,12 @@ const  Home =({navigation,route})=> {
           onPressIn = {()=> setSprite("Cat")}
           onRelease = {()=> console.log('out press')}
           onDragRelease = {setPosition}
-          style={{ transform: [{ rotateY: `${degreeValue}deg` }] }}
         />
         </Animated.View>
         </View>
 
         <View style = {{opacity:ballBoxImgVisible}}>
+        <Animated.View style={[animationStyle]}>
         <Draggable
           imageSource={require('../assets/ball.png')}
           renderSize = {50}
@@ -143,6 +176,7 @@ const  Home =({navigation,route})=> {
           onRelease = {()=> console.log('out press')}
           onDragRelease = {setPosition}
         />
+        </Animated.View>
         </View>
         {
           sprite.length!=0?

@@ -1,11 +1,47 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import DraggableFlatList from 'react-native-draggable-flatlist';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet,PanResponder, Animated,FlatList, TouchableOpacity } from 'react-native';
 import useStore from '../Store';
+import EIcon from 'react-native-vector-icons/EvilIcons'
+
+const DraggableItem = ({ item, index, onDrop }) => {
+  const position = useRef(new Animated.ValueXY()).current;
+  const [dragging, setDragging] = useState(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        setDragging(true);
+      },
+      onPanResponderMove: Animated.event(
+        [null, { dx: position.x, dy: position.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (e, gestureState) => {
+        setDragging(false);
+        if (gestureState.moveX > 200) { // Adjust this value based on your layout
+          onDrop(item);
+        }
+        position.setValue({ x: 0, y: 0 }); // Reset position
+      },
+    })
+  ).current;
+
+  return (
+    <View style={{marginTop:25,left:20}}>
+      <Animated.View
+        style={[styles.droppedItem, {transform: position.getTranslateTransform()}]}
+        {...panResponder.panHandlers}>
+        <Text style={styles.text}>{item.name}</Text>
+      </Animated.View>
+    </View>
+  );
+};
 
 const ActionList = () => {
     const [droppedItems, setDroppedItems] = useState([]);
+    const [activeAction,setActiveAction]=useState("")
     const addActionList = useStore((state) => state.addActionList);
 
     const handleDrop = (item) => {
@@ -16,13 +52,6 @@ const ActionList = () => {
       addActionList(droppedItems);
     },[droppedItems])
 
-    const renderItem = ({ item, index, drag }) => (
-        <TouchableOpacity
-            onLongPress={drag}
-            style={styles.itemContainer}>
-            <Text style={styles.dragItemText}>{item.name}</Text>
-        </TouchableOpacity>
-    );
 
     const dragItemData = [
         { id: 1, name: "Add X=50" },
@@ -31,45 +60,47 @@ const ActionList = () => {
         { id: 4, name: "Rotate 360" },
     ];
 
+    const removeItem=(id)=>{
+      setDroppedItems(droppedItems.filter(item => item.id !== id));
+    }
     return (
-      <GestureHandlerRootView style={{flex: 1}}>
+      <Animated.View style={styles.container}>
         <View>
           <View style={{flexDirection: 'row'}}>
-            <Text style={{flex: 1,padding: 10,backgroundColor: 'yellow',textAlign: "center"}}>Actions</Text>
-            <Text style={{flex: 1,padding: 10,backgroundColor: 'green',color: 'white',textAlign: "center"}}>Your Action</Text>
+            <Text style={{flex: 1,padding: 10,backgroundColor: 'yellow',textAlign: "center"}}>CODE</Text>
+            <Text style={{flex: 1,padding: 10,backgroundColor: 'green',color: 'white',textAlign: "center"}}>ACTION</Text>
           </View>
-          <View style={styles.innerContainer}>
-            <View style={styles.dragItems}>
-              {dragItemData.map(item => (
-                <TouchableOpacity
-                  key={item.id}
-                  onLongPress={() => handleDrop(item)}
-                  style={styles.itemContainer}
-                >
-                  <Text style={styles.dragItemText}>{item.name}</Text>
-                </TouchableOpacity>
+          <View style={styles.leftContainer}>
+            <FlatList
+              data={dragItemData}
+              renderItem={({item,index}) => (
+                <DraggableItem
+                  item={item}
+                  index={index}
+                  onDrop={handleDrop}
+                />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+            <View style={styles.rightContainer}>
+              {droppedItems.map((item) => (
+                <View style={{flexDirection: "row"}}>
+                  <View key={item.id} style={styles.droppedItem}>
+                    <Text style={styles.text}>{item.name}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.deleteIconContainer} onPress={()=>removeItem(item?.id)}>
+                  <EIcon name='trash' color="white" size={25} className="fas fa-play" />
+                  </TouchableOpacity>
+                </View>
               ))}
-            </View>
-            <View style={styles.dropZone}>
-              <DraggableFlatList
-                data={droppedItems}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id.toString()}
-                onDragEnd={({data}) => setDroppedItems(data)}
-              />
             </View>
           </View>
         </View>
-      </GestureHandlerRootView>
+      </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
-    header: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
     innerContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -86,16 +117,6 @@ const styles = StyleSheet.create({
       justifyContent:"center",
       alignItems:"center"
     },
-    dropZone: {
-        width: '40%',
-        padding: 10,
-        borderRadius: 5,
-    },
-    subHeader: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
     itemContainer: {
         borderWidth: 1,
         borderColor: '#ccc',
@@ -107,6 +128,49 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
+    container: {
+      width:"100%",
+      height:"100%",
+      flex: 1,
+      backgroundColor: '#F5F5F5',
+    },
+    leftContainer: {
+      flexDirection:"row"
+    },
+    rightContainer: {
+      flex: 1,
+      justifyContent: "flex-end",
+      alignItems: "flex-end",
+      top:2,
+      padding:10,
+      position:"absolute",
+      right:3,
+      borderWidth:1,
+      borderColor:"gray",
+      width:"48%",
+      paddingBottom:500
+    },
+    text: {
+      color: 'black',
+      fontSize: 16,
+    },
+    droppedItem: {
+      width: 140,
+      padding:8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'lightblue',
+      borderRadius: 5,
+      marginBottom: 20,
+    },
+    deleteIconContainer:{
+      position: "absolute",
+      right: -4,
+      top:-4,
+      padding:3,
+      borderRadius:18,
+      backgroundColor:"red"
+    }
 });
 
 export default ActionList;
