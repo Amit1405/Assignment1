@@ -1,74 +1,87 @@
 import {
-    View,
-    Button,
-    StyleSheet,
-    Image,
-    Text,
-    Pressable,
-  } from "react-native";
+  View,
+  StyleSheet,
+  Image,
+  Text,
+  Pressable,
+  TouchableOpacity,
+} from "react-native";
+import EIcon from 'react-native-vector-icons/EvilIcons'
 
-  function BoxItem(props) {
-      return (
-          <View style={styles.toolsBox}>
-                  <Pressable style = {{flex: 7,width: '100%',
-                    height: '100%',}} onPress={props.pressedImg}>
-                  <Image style={{
-                    width: '100%',
-                    height: '70%',
-                    resizeMode: 'center',
-                    backgroundColor: props.backgroundColor,
-                    justifyContent:'center',
-                    marginTop:20,
-                  } } source={props.path} />
-                  </Pressable>
-                  <Pressable style = {{flex: 2, width:'100%',height:'100%'}} onPress={props.pressedAction}>
-                  <View style={{backgroundColor: "blue",
-                                width: "100%",
-                                height: '100%',
-                                color: "white",
-                                alignContent: "center",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                borderBottomLeftRadius: 10,
-                                borderBottomRightRadius: 10,
-                                opacity: props.visibleAction
-                                }}
-                                >
-                      <Text style={{ color: "white" }}>Add Actions</Text>
-                  </View>
-                  </Pressable>
-
-          </View>
-      );
+function BoxItem(props) {
+  const removeItem=()=>{
+    props.setShowBoxButton(!props.showBoxButton)
   }
+  return (
+    <View style={styles.toolsBox}>
+      <Pressable style={styles.toolsImageUpload} onPress={props.pressedImg}>
+        <TouchableOpacity style={styles.deleteIconContainer} onPress={() => removeItem()}>
+          <EIcon name='trash' color="white" size={25} className="fas fa-play" />
+        </TouchableOpacity>
+        <Image style={[styles.toolsImageStyle,{ backgroundColor: props.backgroundColor,}]} source={props.path} />
+      </Pressable>
+      <Pressable style={styles.addActionClick} onPress={props.pressedAction}>
+        <View style={[styles.actionTextContainer,{opacity: props.visibleAction}]}>
+          <Text style={styles.actionText}>Add Actions</Text>
+        </View>
+      </Pressable>
 
-  export default BoxItem;
+    </View>
+  );
+}
 
-  const styles = StyleSheet.create({
-    toolsBox: {
-      borderWidth: 1,
-      borderColor: "#e5e5e5",
-      height: "80%",
-      borderRadius: 10,
-      width: 120,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 15,
-      marginLeft: 8,
-    },
+export default BoxItem;
 
-    actionText: {
+const styles=StyleSheet.create({
+  toolsBox: {
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    height: "80%",
+    borderRadius: 10,
+    width: 120,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 15,
+    marginLeft: 8,
+  },
+  deleteIconContainer: {
+    position: "absolute",
+    right: -1,
+    top: -6,
+    padding: 2,
+    borderRadius: 18,
+    backgroundColor: "dodgerblue"
+  },
+  actionTextContainer:{
+    backgroundColor: "blue",
+    width: "100%",
+    height: '100%',
+    color: "white",
+    alignContent: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  actionText: {
+    color: "white"
+  },
 
-    },
-
-    toolsImage: {
-
-    },
-
-    toolsImageUpload: {
-      flex: 7,
-      width: "70%",
-      height: "50%",
-      margin: 8,
-    },
-  });
+  toolsImageStyle: {
+    width: '100%',
+    height: '70%',
+    resizeMode: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  toolsImageUpload: {
+    flex: 7,
+    width: '100%',
+    height: '100%',
+  },
+  addActionClick:{
+    flex: 2,
+    width: '100%',
+    height: '100%'
+  }
+});
