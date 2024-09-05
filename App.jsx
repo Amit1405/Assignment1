@@ -5,6 +5,7 @@
  * @format
  */
 
+
 import React from 'react';
 import {
   Text,
@@ -35,6 +36,11 @@ function App(){
           headerTitleStyle: {
             fontWeight: "bold"
           },
+          headerRight: () => (
+            <TouchableOpacity>
+              <Text style={{color:"white"}}>Sign in</Text>
+            </TouchableOpacity>
+          )
         })}
         />
         <Stack.Screen name='action-list' component={ActionListScreen}
@@ -61,3 +67,7 @@ function App(){
 
 
 export default App;
+
+
+
+
